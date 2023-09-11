@@ -68,11 +68,21 @@ class PostController {
             content, //List<PostResponse> (컬렉션)
             PageRequest.of(page, size), //Pageable
             totalCount) //전체 건수
+
+
+        //작성시에 아래 문구를 먼저 넣어서 오류를 없앤 후 적어야 어느 부분이 잘못되었는지 확인하면서
+        //코드를 쓰는게 가능하다.
+//        return@transaction PageImpl(listOf())
     }
 
+    //    /paging/search?size=10&page=0
+    //    /paging/search?size=10&page=0&keyword="제목"
     @GetMapping("/paging/search")
-    fun searchPaging(@RequestParam size : Int, @RequestParam page : Int, @RequestParam keyword : String?) : Page<PostResponse>
-            = transaction(Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true) {
+    fun searchPaging(
+        @RequestParam size : Int, @RequestParam page : Int, @RequestParam keyword : String?)
+    : Page<PostResponse>
+    = transaction(Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true) {
+        //검색 조건 생성
         val query = when {
             keyword != null -> Posts.select {
                 (Posts.title like "%${keyword}%") or
@@ -99,6 +109,8 @@ class PostController {
                           @RequestParam keyword : String?) : Page<PostCommentCountResponse>
             = transaction(Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true) {
 
+//        -- select에는 그룹핑 열이 나와줘야 함
+//        -- 그룹핑 열은 제외하고는 집계함수(count, sum, avg, max)
 //        select p.id, p.title, p.content, p.created_date, pf.nickname, count(c.id) as commentCount
 //        from post p
 //        inner join profile pf on p.profile_id = pf.id
@@ -245,7 +257,8 @@ class PostController {
 
         //SQL
         //select * from post where id = :id -> ResultRow?
-        //
+        //[select * from] post [where] id = :id -> ResultRow?
+        // post id = :id
         // Posts.slice(컬럼선택).select{조건문}.limit(..).groupBy(..).orderBy(..)
         //transaction { Posts.select(where: Posts.id eq id) <원래 이렇게 인데, 항상 쓰는 방식이라 아래처럼 줄임.
         transaction { Posts.select(where = (Posts.id eq id) and (Posts.profileId eq authProfile.id)).firstOrNull() }
