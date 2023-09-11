@@ -1,5 +1,6 @@
 package com.example.myapp.post
 
+import com.example.myapp.auth.Profiles
 import jakarta.annotation.PostConstruct
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Database
@@ -18,6 +19,7 @@ object Posts : Table("post") {
 //    val content = text("content").nullable() // 널 가능
     val content = text("content") // 기본값이 null불가능.
     val createdDate  = datetime("created_date")
+    val profileId = reference("profile_id", Profiles);
 
     //primary key 설정(제약조건)
     override val primaryKey = PrimaryKey(id, name = "pk_post_id")
@@ -30,6 +32,7 @@ object PostComments : LongIdTable("post_comment") {
     //아래처럼 이름을 붙일 수도 있음
 //    val postId = reference("post_id", Posts.id, fkName = "fk_post_comment_post_id")
     val comment = text("comment")
+    val profileId = reference("profile_id", Profiles);
 
 
 }
