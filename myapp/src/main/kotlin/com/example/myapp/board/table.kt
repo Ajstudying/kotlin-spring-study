@@ -23,7 +23,9 @@ object Boards : Table("board"){
 object BoardComments : LongIdTable("board_comment") {
     val boardId = reference("board_id", Boards.id)
     val comment = text("comment")
+    val createdDate = datetime("created_date")
     val profileId = reference("profile_id", Profiles)
+    val nickname = text("nickname")
 }
 
 @Configuration
