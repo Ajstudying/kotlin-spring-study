@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+
+
 plugins {
 	id("org.springframework.boot") version "3.1.3"
 	id("io.spring.dependency-management") version "1.1.3"
@@ -17,6 +19,7 @@ java {
 repositories {
 	mavenCentral()
 }
+
 val exposedVersion: String by project
 dependencies {
 
@@ -32,7 +35,8 @@ dependencies {
 	//spring-data-jdbc 가 있어야 데이터베이스에 연결이 됨. application properties는 연결 소스(설정)만 적어놓은 것!
 	//아래의 것이 있어야 실행이 되는데 spring에는 기본적으로 깔려 있어서(내장 되어있어서) 가능한 것임.
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jdbc
-    //  implementation("org.springframework.data:spring-data-jdbc:3.1.3")
+	//  implementation("org.springframework.data:spring-data-jdbc:3.1.3")
+	implementation ("com.fasterxml.jackson.core:jackson-databind")
 
 	//expose 의존성
 	implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")

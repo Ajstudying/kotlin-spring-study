@@ -1,11 +1,9 @@
 package com.example.myapp.board
 
 import com.example.myapp.auth.Auth
-import com.example.myapp.auth.AuthProfile
-import com.example.myapp.auth.Profiles
+import com.example.myapp.auth.AuthUser
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -24,11 +22,11 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.sql.Connection
 import java.time.LocalDateTime
-import java.util.Base64
 
 @RestController
 @RequestMapping("boards")
 class BoardController {
+    @Auth
     @GetMapping
     fun fetch() = transaction(){
         val b = Boards
@@ -36,6 +34,7 @@ class BoardController {
             r[b.id], r[b.title], r[b.content], r[b.image], r[b.createdDate].toString()
         )}
     }
+    @Auth
     @GetMapping("/paging")
     fun paging(@RequestParam size: Int, @RequestParam page: Int)
     : Page<BoardResponse> = transaction(Connection.TRANSACTION_READ_COMMITTED, readOnly = true)
@@ -52,6 +51,7 @@ class BoardController {
         return@transaction PageImpl(content, PageRequest.of(page, size), totalCount)
     }
 
+    @Auth
     @GetMapping("/paging/search")
     fun searchPaging(
         @RequestParam size: Int, @RequestParam page: Int, @RequestParam keyword: String?)
@@ -118,7 +118,7 @@ class BoardController {
         return@transaction ResponseEntity.status(HttpStatus.OK).body(comments)
     }
 
-
+    @Auth
     @PostMapping
     fun create(@RequestBody request: BoardCreateRequest): ResponseEntity<Any>{
         if(!request.validate()){
@@ -147,7 +147,7 @@ class BoardController {
     @Auth
     @PostMapping("/id/comment")
     fun createComment
-                (@PathVariable id: Long, @RequestBody request: CommentCreateRequest, @RequestAttribute authProfile: AuthProfile)
+                (@PathVariable id: Long, @RequestBody request: CommentCreateRequest, @RequestAttribute authUser: AuthUser)
     : ResponseEntity<Any?>{
         if(request.content.isNullOrEmpty()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
@@ -162,8 +162,8 @@ class BoardController {
                 it[comment] = request.content
                 it[createdDate] = LocalDateTime.now()
                 it[boardId] = foundB[boardId]
-                it[profileId] = authProfile.id
-                it[nickname] = authProfile.nickname
+                it[profileId] = authUser.id
+                it[nickname] = authUser.nickname
             }.resultedValues
                 ?: return@transaction Pair(false, null)
 
@@ -184,6 +184,7 @@ class BoardController {
             .body(mapOf("data" to response, "error" to "conflict"))
     }
 
+    @Auth
     @DeleteMapping("/{id}")
     fun remove(@PathVariable id: Long) : ResponseEntity<Any>{
         transaction { Boards.select(Boards.id eq id).firstOrNull() }
@@ -192,9 +193,10 @@ class BoardController {
         return ResponseEntity.ok().build()
     }
 
+    @Auth
     @PutMapping("/id")
     fun modify(@PathVariable id: Long, @RequestBody request: BoardModifyRequest)
-    : ResponseEntity<Any>{
+    : ResponseEntity<Any> {
         if(request.title.isNullOrEmpty() && request.content.isNullOrEmpty()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("message" to "title or content are required"))

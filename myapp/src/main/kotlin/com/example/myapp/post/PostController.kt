@@ -167,7 +167,8 @@ class PostController {
     //null체크 할 필요가 없음.
     @Auth
     @PostMapping
-    fun create(@RequestBody request : PostCreateRequest, @RequestAttribute authProfile : AuthProfile) : ResponseEntity<Map<String, Any?>> {
+    fun create(@RequestBody request : PostCreateRequest, @RequestAttribute authProfile : AuthProfile)
+    : ResponseEntity<Map<String, Any?>> {
         println("${request.title}, ${request.content}")
 
         //자바
