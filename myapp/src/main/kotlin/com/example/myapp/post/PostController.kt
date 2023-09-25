@@ -3,18 +3,27 @@ package com.example.myapp.post
 import com.example.myapp.auth.Auth
 import com.example.myapp.auth.AuthProfile
 import com.example.myapp.auth.Profiles
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.springframework.core.io.ResourceLoader
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.sql.Connection
 import java.time.LocalDateTime
+import java.util.*
 
 //query-model, view-model
 //domain-model(JPA entity)
@@ -22,8 +31,9 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("posts")
-class PostController {
+class PostController (private val resourceLoader: ResourceLoader) {
 
+    private val POST_FILE_PATH = "files/post";
     // exposed selectAll -> List<ResultRow>
     // ResultRow는 transaction {} 구문 밖에서 접근 불가능함
     //transaction 구분 외부로 보낼 때는 별도의 객체로 변환해서 내보낸다.
@@ -302,5 +312,169 @@ class PostController {
         }
         return ResponseEntity.ok().build();
     }
+
+    //POST/posts/with-file
+    //content-type: multipart/form-data
+    //body: files=[...octet-stream]
+    //      title=제목입니다.&content=내용입니다.
+    //default 파일용량이 10mb이기 때문에 application properties에 따로 크기 설정 해줘야 함.
+    @PostMapping("/with-file")
+    fun createWithFile(@RequestParam files: Array<MultipartFile>, @RequestParam title: String, @RequestParam content: String)
+    : ResponseEntity<PostWithFileResponse> {
+
+        println("title: $title")
+        println("content: $content")
+
+
+       //files/post
+        val dirPath = Paths.get(POST_FILE_PATH)
+        if (!Files.exists(dirPath)) {
+            //폴더 생성
+            Files.createDirectories(dirPath)
+        }
+        val filesList = mutableListOf<Map<String, String?>>()
+
+        //runBlocking, launch 코루틴 처리
+        runBlocking {
+            files.forEach {
+                launch {
+                    println("filename: ${it.originalFilename}")
+                    //files/post/1.png
+
+                    //{it.originalFilename!! 자바라이브러리라 string이 nullable이라 !!(null이 아니다)를 붙여줘야 함.
+                    //uuid: 랜덤하게 문자열로 id값을 만들 수 있는 방법(순서X)
+                    val uuidFileName = "${ UUID.randomUUID().toString() }.${ it.originalFilename!!.split(".").last() }"
+                    val filePath = dirPath.resolve(uuidFileName)
+                    //파일객체에서 스트림객체를 얻어옴
+                    //스트림객체: 바이트배열 처리할 수 있는 객체
+                    it.inputStream.use {
+                        Files.copy(it, filePath, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                    //파일의 메타데이터를 리스트-맵에 임시저장
+                    filesList.add(mapOf("uuidFileName" to uuidFileName,
+                        "contentType" to it.contentType,
+                        "originalFileName" to it.originalFilename))
+                }
+            }
+        }
+
+
+        //데이터베이스에 파일정보와 데이터를 저장하고
+        //post insert, post_file insert batch
+        val result = transaction {
+            val p = Posts
+            val pf = PostFiles
+
+            //포스트 1건 저장
+            val insertedPost = p.insert {
+                it[this.title] = title
+                it[this.content] = content
+                it[this.profileId] = 1 //강제로 1번 유저로(인증처리 전이라)
+                it[this.createdDate] = LocalDateTime.now()
+            }.resultedValues!!.first()
+
+            //insert into....values(..),(..),(..);
+            //참고로 batchInsert 를 하면 db설정 상관없이 Expose 로그에는 insert구문이 여러개 생김
+            //실제 작동은 batch insert로 처리 됨.
+            //https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert
+            pf.batchInsert(filesList) {
+                this[pf.postId] = insertedPost[p.id] //외래키값 넣어줌
+                this[pf.contentType] = it["contentType"] as String
+                this[pf.originalFileName] = it["originalFileName"] as String
+                this[pf.uuidFileName] = it["uuidFileName"] as String
+            }
+
+            //insert한 파일 목록을 post id로 조회
+            val insertedPostFiles = pf.select { pf.postId eq insertedPost[p.id] }.map {r ->
+                PostFileResponse(
+                    id = r[pf.id].value,
+                    postId = insertedPost[p.id],
+                    uuidFileName = r[pf.uuidFileName],
+                    originalFileName = r[pf.originalFileName],
+                    contentType = r[pf.contentType]
+                )
+            }
+            return@transaction PostWithFileResponse(
+                id = insertedPost[p.id],
+                title = insertedPost[p.title],
+                content = insertedPost[p.content],
+                createdDate = insertedPost[p.createdDate].toString(),
+                files = insertedPostFiles
+            )
+        }
+
+        //응답
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    @GetMapping("/paging/search/with-files")
+    fun searchPagingWithFile(@RequestParam size : Int, @RequestParam page : Int, @RequestParam keyword : String?) : Page<PostWithFileResponse>
+            = transaction(Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true) {
+        // 검색 조건 생성
+        val query = when {
+            keyword != null -> Posts.select {
+                (Posts.title like "%${keyword}%") or
+                        (Posts.content like "%${keyword}%" ) }
+            else -> Posts.selectAll()
+        }
+        // 전체 결과 카운트
+        val totalCount = query.count()
+        // 페이징 조회
+        val postsResponse = query
+            .orderBy(Posts.id to SortOrder.DESC)
+            .limit(size, offset= (size * page).toLong())
+            .map { r ->
+                PostResponse(r[Posts.id],
+                    r[Posts.title],
+                    r[Posts.content], r[Posts.createdDate].toString())
+            }
+        val pf = PostFiles;
+        // select * from post_file where post_id in (1,2,4,5,6.....)
+        //inList 함수 (sql in 이 객체 안에 객체 배열을 넣어서 만들어줌. 중요함!!)
+        val postFilesResponse = pf.select { pf.postId inList postsResponse.map { it.id }.toList() }.map {r ->
+            PostFileResponse(
+                id = r[pf.id].value,
+                postId = r[pf.postId],
+                uuidFileName = r[pf.uuidFileName],
+                originalFileName = r[pf.originalFileName],
+                contentType = r[pf.contentType]
+            )
+        }
+        //파일 목록까지 포함된 리스트로 변환
+        val postWithFileResponse = postsResponse.map { p ->
+            PostWithFileResponse(
+                id=p.id,
+                title=p.title,
+                content=p.content,
+                createdDate = p.createdDate,
+                // 각 포스트별 id가 매칭 되는 파일만 필터해서 추림
+                files=postFilesResponse.filter { f -> f.postId == p.id }
+            )
+        }
+        // Page 객체로 리턴
+        PageImpl(postWithFileResponse, PageRequest.of(page, size),  totalCount)
+    }
+
+    //GET/posts/files/
+    //Content-type: video/mp4
+    @GetMapping("/files/{uuidFilename}")
+    fun downloadFile(@PathVariable uuidFilename : String) : ResponseEntity<Any> {
+        //서버에서 해당 경로의 파일을 읽어오기
+        val file = Paths.get("$POST_FILE_PATH/$uuidFilename").toFile()
+        //파일이 없으면 NOT-FOUND
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build()
+        }
+        //파일의 content-type 처리
+        val mimeType = Files.probeContentType(file.toPath())
+        val mediaType = MediaType.parseMediaType(mimeType)
+
+        //file: files/post/dkdkd.png
+        val resource = resourceLoader.getResource("file:$file")
+        return ResponseEntity.ok()
+            .contentType(mediaType) //video/mp4, image/png, image/jpeg
+            .body(resource)
+    }
+
 
 }

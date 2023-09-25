@@ -33,9 +33,16 @@ object PostComments : LongIdTable("post_comment") {
 //    val postId = reference("post_id", Posts.id, fkName = "fk_post_comment_post_id")
     val comment = text("comment")
     val profileId = reference("profile_id", Profiles);
-
-
 }
+
+//파일의 메타정보
+object PostFiles : LongIdTable("post_file") {
+    val postId = reference("post_id", Posts.id)
+    val originalFileName = varchar("original_file_name", 200)
+    val uuidFileName = varchar("uuid", 50).uniqueIndex()
+    val contentType = varchar("content_type", 100)
+}
+
 //테이블 생성 코드
 //database: Database 이 부분이 DatabaseConfiguration에 두번째 bean임. <<의존성 주입
 @Configuration
@@ -49,7 +56,7 @@ class PostTableSetUp(private val database: Database) {
         //expose 라이브러리에서는 모든 SQL처리는
         // transaction 함수의 statement람다함수 안에서 처리를 해야 함.
         transaction(database) {
-            SchemaUtils.createMissingTablesAndColumns(Posts, PostComments)
+            SchemaUtils.createMissingTablesAndColumns(Posts, PostComments, PostFiles)
         }
     }
 
