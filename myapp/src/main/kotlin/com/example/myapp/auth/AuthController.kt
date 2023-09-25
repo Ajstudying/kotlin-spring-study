@@ -57,6 +57,7 @@ class AuthController(private val service: AuthService) {
         println(password)
 
         val (result, message) = service.authenticate(username, password)
+        println(result)
         if(result) {
             // 3. cookie와 헤더를 생성한후 리다이렉트
             val cookie = Cookie("token", message)

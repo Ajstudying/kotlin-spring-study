@@ -1,5 +1,6 @@
 package com.example.myapp.board
 
+import com.example.myapp.auth.Profile
 import jakarta.websocket.Decoder.Binary
 import jakarta.websocket.Encoder
 import jdk.incubator.vector.VectorOperators
@@ -28,7 +29,9 @@ data class BoardCommentResponse(
     val nickname: String
 )
 
-data class BoardCreateRequest(val title: String, val content: String, val image: String)
+data class BoardCreateRequest(
+        val request: String, val title: String, val content: String,
+        val image: String, val petname: String, val species: String)
 
 fun BoardCreateRequest.validate() =
     !(this.title.isEmpty() || this.content.isEmpty())

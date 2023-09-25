@@ -35,7 +35,7 @@ class AuthService(private val database: Database){
             }
             req.profileList.forEach { pro ->
                 Profiles.insert {
-                    it[this.petName] = pro.petName
+                    it[this.petname] = pro.petname
                     it[this.species] = pro.species
                     it[this.identityId] = identityId.value
                 }

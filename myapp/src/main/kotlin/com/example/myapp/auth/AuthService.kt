@@ -116,6 +116,7 @@ class AuthService(private val database: Database){
             payload["nickname"].toString()
         )
 
+        println(token)
         return Pair(true, token)
     }
 }

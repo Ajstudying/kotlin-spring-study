@@ -14,7 +14,7 @@ object Identities : LongIdTable("identity") {
 }
 
 object Profiles : LongIdTable("profile") {
-    val petName = varchar("petname", 100)
+    val petname = varchar("petname", 100)
     val species = varchar("species", 100)
     val identityId = reference("identity_id", Identities ).nullable()
 }

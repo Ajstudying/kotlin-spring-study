@@ -19,6 +19,7 @@ object Boards : Table("board"){
 //    val profileId = reference("profile_id", Profiles)
 //    val image = varchar("image", length = 1024)
     val image = registerColumn<String>("image_long_text", LongTextColumnType())
+    val request = varchar("request", 100)
 
 
     override val primaryKey = PrimaryKey(id, name = "pk_board_id")

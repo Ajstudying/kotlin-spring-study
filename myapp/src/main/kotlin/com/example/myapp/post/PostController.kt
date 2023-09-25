@@ -38,7 +38,7 @@ class PostController (private val resourceLoader: ResourceLoader) {
     // ResultRow는 transaction {} 구문 밖에서 접근 불가능함
     //transaction 구분 외부로 보낼 때는 별도의 객체로 변환해서 내보낸다.
     // 결과값: List<PostResponse>
-    @Auth
+//    @Auth
     @GetMapping
     fun fetch() = transaction(){
         Posts.selectAll().map { r -> PostResponse(
@@ -343,6 +343,7 @@ class PostController (private val resourceLoader: ResourceLoader) {
 
                     //{it.originalFilename!! 자바라이브러리라 string이 nullable이라 !!(null이 아니다)를 붙여줘야 함.
                     //uuid: 랜덤하게 문자열로 id값을 만들 수 있는 방법(순서X)
+                    // 랜덤한 UUID(Universally Unique Identifier)
                     val uuidFileName = "${ UUID.randomUUID().toString() }.${ it.originalFilename!!.split(".").last() }"
                     val filePath = dirPath.resolve(uuidFileName)
                     //파일객체에서 스트림객체를 얻어옴
@@ -377,6 +378,7 @@ class PostController (private val resourceLoader: ResourceLoader) {
             //참고로 batchInsert 를 하면 db설정 상관없이 Expose 로그에는 insert구문이 여러개 생김
             //실제 작동은 batch insert로 처리 됨.
             //https://github.com/JetBrains/Exposed/wiki/DSL#batch-insert
+            //batch 집단, 일괄처리
             pf.batchInsert(filesList) {
                 this[pf.postId] = insertedPost[p.id] //외래키값 넣어줌
                 this[pf.contentType] = it["contentType"] as String
@@ -466,6 +468,7 @@ class PostController (private val resourceLoader: ResourceLoader) {
             return ResponseEntity.notFound().build()
         }
         //파일의 content-type 처리
+        //probe 캐묻다, 조사하다
         val mimeType = Files.probeContentType(file.toPath())
         val mediaType = MediaType.parseMediaType(mimeType)
 

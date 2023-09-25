@@ -21,8 +21,8 @@ class WebMvcConfig(val authInterceptor: AuthInterceptor ) : WebMvcConfigurer {
         registry
             .addMapping("/**") // 모든 경로에 대해
             .allowedOrigins(
-                "http://localhost:5501",
-                "http://192.168.100.36:5501"
+                "http://localhost:5500",
+                "http://192.168.100.36:5500"
             ) // 로컬 호스트 origin 허용
             .allowedMethods("*") // 모든 메서드 허용(GET, POST.....)
     }

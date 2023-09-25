@@ -128,6 +128,7 @@ class BoardController {
 
         val result =  transaction {
             val result = Boards.insert{
+
                 it[title] = request.title
                 it[content] = request.content
 //                it[image] = request.image.toByteArray(Charsets.UTF_8)

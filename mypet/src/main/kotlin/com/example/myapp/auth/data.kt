@@ -8,7 +8,7 @@ data class SignupRequest (
      val profileList: List<Profile>,
 )
 data class Profile (
-        val petName : String,
+        val petname : String,
         val species : String,
 )
 
