@@ -28,6 +28,7 @@ class PostController {
     // ResultRow는 transaction {} 구문 밖에서 접근 불가능함
     //transaction 구분 외부로 보낼 때는 별도의 객체로 변환해서 내보낸다.
     // 결과값: List<PostResponse>
+    @Auth
     @GetMapping
     fun fetch() = transaction(){
         Posts.selectAll().map { r -> PostResponse(
