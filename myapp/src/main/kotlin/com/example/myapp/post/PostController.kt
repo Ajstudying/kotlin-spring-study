@@ -114,6 +114,17 @@ class PostController (private val resourceLoader: ResourceLoader) {
         // Page 객체로 리턴
         return@transaction PageImpl(content, PageRequest.of(page, size),  totalCount)
     }
+    @GetMapping("/{id}")
+    fun selectPost(@PathVariable id: Long): ResponseEntity<PostResponse>{
+
+        val post = transaction { Posts.select { (Posts.id eq id) }
+                .mapNotNull { r -> PostResponse(r[Posts.id], r[Posts.title], r[Posts.content], r[Posts.createdDate].toString()) }
+                .singleOrNull() }
+
+        println(post)
+
+        return post?.let { ResponseEntity.ok(it) } ?: ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
     @GetMapping("/commentCount")
     fun fetchCommentCount(@RequestParam size : Int, @RequestParam page : Int,

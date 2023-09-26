@@ -52,8 +52,13 @@ INSERT INTO `post` (`title`, `content`, `created_date`,profile_id) VALUES
 
 select * from post;
 select * from post_comment;
+select * from board_comment;
+select * from board;
+
+truncate table board;
 
 select * from post order by id desc;
+select * from post order by id asc;
 
 select * from identity;
 select * from profile;
@@ -63,6 +68,16 @@ truncate table post_comment;
 truncate table identity;
 truncate table profile;
 
+-- 외래키 체크 False
+set FOREIGN_KEY_CHECKS = 0;
+
+-- 작업
+truncate table user;
+
+-- 외래키 체크 True
+set FOREIGN_KEY_CHECKS = 1;
+
+ALTER TABLE profile MODIFY COLUMN identity_id BIGINT NULL;
 
 -- left join
 -- 왼쪽 테이블을 필수적으로 있고, 오른쪽 테이블에는 없을 수도 있음.
@@ -114,3 +129,5 @@ group by p.id, p.title, p.content, p.created_date, pf.nickname;
   (FLOOR(RAND() * 10) + 1, 'I''m eager to learn more from you.', 1),
   (FLOOR(RAND() * 10) + 1, 'This post is a bit too technical for me.', 1),
   (FLOOR(RAND() * 10) + 1, 'I appreciate the effort you put into this content.', 1);
+  
+  SELECT `identity`.id, `identity`.secret, `identity`.username FROM `identity` WHERE `identity`.username = 'sumie';
