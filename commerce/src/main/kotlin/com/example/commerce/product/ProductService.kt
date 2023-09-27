@@ -17,7 +17,9 @@ class ProductService(private val productClient: ProductClient,
     val topProducts = listOf<TopProductResponse>()
 
     //애플리케이션을 시작하면 한번은 수행됨
-    @Scheduled(fixedRate = 1000 * 60 * 60)
+    //fixedRate 초단위, 혹은 cron형식으로 스케줄 주기를 지정할 수 있음.
+//    @Scheduled(fixedRate = 1000 * 60 * 60)
+//    @Scheduled(cron = "10 * * * * *")
     fun scheduledFetchTopPromotion() {
         println("--called by schedule: ${Date().time}--")
 //        val topProducts = productClient.getTopPromotion();

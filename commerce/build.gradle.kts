@@ -22,6 +22,7 @@ repositories {
 extra["springCloudVersion"] = "2022.0.4"
 
 dependencies {
+	//amqp rabbitMQ 연결관련
 	implementation("org.springframework.boot:spring-boot-starter-amqp")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.springframework.boot:spring-boot-starter-web")
