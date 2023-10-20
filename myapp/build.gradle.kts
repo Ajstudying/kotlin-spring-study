@@ -18,6 +18,7 @@ repositories {
 	mavenCentral()
 }
 val exposedVersion: String by project
+
 dependencies {
 
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -52,6 +53,7 @@ dependencies {
 
 	implementation("com.auth0:java-jwt:4.4.0")
 	implementation("at.favre.lib:bcrypt:0.10.2")
+	implementation("org.springframework.data:spring-data-jdbc:3.1.3")
 
 }
 

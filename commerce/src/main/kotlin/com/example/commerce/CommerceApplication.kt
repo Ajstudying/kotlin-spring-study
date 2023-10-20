@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
 
 //다른 서비스(서버)에 HTTP 요청을 보내는 클라이언트를 작성
 //192.168 : 사설 IP 대역
-@FeignClient(name = "inventoryClient", url = "http://192.168.100.36:8082/inventories")
+@FeignClient(name = "inventoryClient", url = "http://192.168.100.36:8082 /inventories")
 interface InventoryClient {
 	@GetMapping("/{productId}")
 	fun fetchProductStocks(@PathVariable productId: Int): Int?
