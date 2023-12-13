@@ -298,7 +298,10 @@ class PostController (private val resourceLoader: ResourceLoader) {
 
     @Auth
     @PutMapping("/{id}")
-    fun modify(@PathVariable id : Long, @RequestBody request: PostModifyRequest, @RequestAttribute authProfile: AuthProfile): ResponseEntity<Any> {
+    fun modify
+            (@PathVariable id : Long,
+             @RequestBody request: PostModifyRequest,
+             @RequestAttribute authProfile: AuthProfile): ResponseEntity<Any> {
 
         println("수정")
         // 둘다 널이거나 빈값이면 400 : Bad request

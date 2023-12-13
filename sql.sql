@@ -65,11 +65,14 @@ select * from profile;
 truncate table post;
 truncate table post_comment;
 
+truncate table book_comments;
+
 truncate table identity;
 truncate table profile;
 
 -- 외래키 체크 False
 set FOREIGN_KEY_CHECKS = 0;
+
 
 -- 작업
 truncate table user;

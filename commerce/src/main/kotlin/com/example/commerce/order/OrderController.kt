@@ -11,6 +11,7 @@ class OrderController(private val orderService: OrderService) {
     @PostMapping
     fun createOrder(@RequestBody orderRequest : Order) {
         //요청값 검증
+        println("주문데이터 들어옴")
         orderService.createOrder(orderRequest)
 
         //응답값 반환
